@@ -1,9 +1,12 @@
 import { useUser } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import * as Speech from "expo-speech";
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   onSnapshot,
   orderBy,
   query,
@@ -123,6 +126,38 @@ export default function IndexScreen() {
     }
   };
 
+  const deleteHistory = (id: string) => {
+    Alert.alert("删除记录", "确定要删除这条翻译记录吗？", [
+      { text: "取消", style: "cancel" },
+      {
+        text: "删除",
+        style: "destructive",
+        onPress: async () => {
+          await deleteDoc(doc(db, "translations", id));
+        },
+      },
+    ]);
+  };
+
+  const LANG_TO_LOCALE: Record<string, string> = {
+    en: "en-US",
+    "zh-CN": "zh-CN",
+    "zh-TW": "zh-TW",
+    ja: "ja-JP",
+    ko: "ko-KR",
+    fr: "fr-FR",
+    de: "de-DE",
+    es: "es-ES",
+    vi: "vi-VN",
+  };
+
+  const handleSpeak = (text: string) => {
+    Speech.speak(text, {
+      language: LANG_TO_LOCALE[targetLang] ?? "en-US",
+      rate: 0.9,
+    });
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -178,6 +213,18 @@ export default function IndexScreen() {
             <View key={item.id} style={styles.historyItem}>
               <Text style={styles.historySrc}>{item.sourceText}</Text>
               <Text style={styles.historyDst}>{item.translatedText}</Text>
+
+              <View>
+                <TouchableOpacity
+                  onPress={() => handleSpeak(item.translatedText)}
+                >
+                  <Ionicons name="volume-high-outline" size={22} />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => deleteHistory(item.id)}>
+                  <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+                </TouchableOpacity>
+              </View>
             </View>
           ))}
         </View>
