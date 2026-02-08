@@ -6,27 +6,80 @@ const ai = new GoogleGenAI({
 
 export async function POST(req: Request) {
   try {
-    const { text, targetLang } = await req.json();
+    const { text, targetLang, image } = await req.json();
 
-    console.log("text", text);
-    console.log("textargetLangt", targetLang);
-
-    if (!text || !targetLang) {
-      return Response.json(
-        { error: "Missing text or targetLang" },
-        { status: 400 },
-      );
+    if (!targetLang) {
+      return Response.json({ error: "Missing targetLang" }, { status: 400 });
     }
 
-    // 🧠 翻译 Prompt（刻意写得非常明确）
+    /**
+     * =====================
+     * 🖼️ 图片翻译（OCR + 翻译）
+     * =====================
+     */
+    if (image) {
+      // ✅ 关键修复：去掉 data:image/...;base64,
+      const cleanBase64Image = image.includes("base64,")
+        ? image.split("base64,")[1]
+        : image;
+
+      const prompt = `
+You are a professional translation engine.
+
+Task:
+1. Read all text in the image.
+2. Translate it into the target language.
+3. Keep original meaning.
+4. Do NOT add explanations.
+5. Output ONLY the translated text.
+
+Target language:
+${targetLang}
+      `.trim();
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: cleanBase64Image,
+                },
+              },
+            ],
+          },
+        ],
+      });
+
+      const translatedText = response.text?.trim();
+
+      if (!translatedText) {
+        throw new Error("Empty image translation result");
+      }
+
+      return Response.json({ text: translatedText });
+    }
+
+    /**
+     * =====================
+     * ✍️ 纯文本翻译
+     * =====================
+     */
+    if (!text) {
+      return Response.json({ error: "Missing text" }, { status: 400 });
+    }
+
     const prompt = `
 You are a professional translation engine.
 
 Task:
 - Translate the given text into the target language.
-- Keep the original meaning.
+- Keep original meaning.
 - Do NOT add explanations.
-- Do NOT add quotes.
 - Output ONLY the translated text.
 
 Target language:
@@ -47,9 +100,7 @@ ${text}
       throw new Error("Empty translation result");
     }
 
-    return Response.json({
-      text: translatedText,
-    });
+    return Response.json({ text: translatedText });
   } catch (error) {
     console.error("❌ Translation error:", error);
     return Response.json({ error: "Translation failed" }, { status: 500 });
