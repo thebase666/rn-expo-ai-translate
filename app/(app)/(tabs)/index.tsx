@@ -27,26 +27,26 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { db } from "@/firebase";
 
 const LANGS = [
-  { label: "中文", value: "zh-CN" },
-  { label: "英文", value: "en" },
-  { label: "日文", value: "ja" },
+  { label: "Chinese", value: "zh-CN" },
+  { label: "English", value: "en" },
+  { label: "Japanese", value: "ja" },
 ];
 
 export default function IndexScreen() {
   const { user } = useUser();
   const userId = user?.id;
 
-  /** ===== 原有状态 ===== */
+  /** ===== Original state ===== */
   const [inputText, setInputText] = useState("");
   const [targetLang, setTargetLang] = useState("zh-CN");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
 
-  /** ===== 新增：图片翻译状态 ===== */
+  /** ===== Image translation state ===== */
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
 
-  /** ===== 原有：历史记录 ===== */
+  /** ===== History ===== */
   useEffect(() => {
     if (!userId) return;
 
@@ -63,12 +63,12 @@ export default function IndexScreen() {
     });
   }, [userId]);
 
-  /** ===== 新增：选图 ===== */
+  /** ===== Pick image ===== */
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (status !== "granted") {
-      Alert.alert("需要相册权限");
+      Alert.alert("Photo permission required");
       return;
     }
 
@@ -84,11 +84,11 @@ export default function IndexScreen() {
     }
   };
 
-  /** ===== 原翻译函数（只多传 image） ===== */
+  /** ===== Translate ===== */
   const handleTranslate = async () => {
     if (loading) return;
     if (!inputText.trim() && !imageBase64) {
-      Alert.alert("请输入文字或选择图片");
+      Alert.alert("Please enter text or select an image");
       return;
     }
 
@@ -100,7 +100,7 @@ export default function IndexScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: inputText.trim() || null,
-          image: imageBase64 || null, // ⭐新增
+          image: imageBase64 || null,
           targetLang,
         }),
       });
@@ -120,23 +120,27 @@ export default function IndexScreen() {
       setImageUri(null);
       setImageBase64(null);
     } catch {
-      Alert.alert("翻译失败");
+      Alert.alert("Translation failed");
     } finally {
       setLoading(false);
     }
   };
 
   const deleteHistory = (id: string) => {
-    Alert.alert("删除记录", "确定要删除这条翻译记录吗？", [
-      { text: "取消", style: "cancel" },
-      {
-        text: "删除",
-        style: "destructive",
-        onPress: async () => {
-          await deleteDoc(doc(db, "translations", id));
+    Alert.alert(
+      "Delete record",
+      "Are you sure you want to delete this translation?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await deleteDoc(doc(db, "translations", id));
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const LANG_TO_LOCALE: Record<string, string> = {
@@ -161,27 +165,27 @@ export default function IndexScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>翻译</Text>
+        <Text style={styles.title}>Translator</Text>
 
-        {/* ===== 新增：图片预览 ===== */}
+        {/* Image preview */}
         {imageUri && <Image source={{ uri: imageUri }} style={styles.image} />}
 
-        {/* ===== 新增：选图按钮 ===== */}
+        {/* Pick image */}
         <TouchableOpacity style={styles.imageBtn} onPress={pickImage}>
           <Ionicons name="image-outline" size={18} />
-          <Text style={{ marginLeft: 6 }}>图片翻译</Text>
+          <Text style={{ marginLeft: 6 }}>Image Translation</Text>
         </TouchableOpacity>
 
-        {/* ===== 原有：输入框 ===== */}
+        {/* Text input */}
         <TextInput
           style={styles.input}
-          placeholder="输入要翻译的文字"
+          placeholder="Enter text to translate"
           multiline
           value={inputText}
           onChangeText={setInputText}
         />
 
-        {/* ===== 原有：目标语言选择 ===== */}
+        {/* Target language */}
         <View style={styles.langRow}>
           {LANGS.map((l) => (
             <TouchableOpacity
@@ -200,14 +204,14 @@ export default function IndexScreen() {
           ))}
         </View>
 
-        {/* ===== 原有：翻译按钮 ===== */}
+        {/* Translate button */}
         <TouchableOpacity style={styles.translateBtn} onPress={handleTranslate}>
           <Text style={{ color: "#fff" }}>
-            {loading ? "翻译中..." : "翻译"}
+            {loading ? "Translating..." : "Translate"}
           </Text>
         </TouchableOpacity>
 
-        {/* ===== 原有：历史记录 ===== */}
+        {/* History */}
         <View style={{ marginTop: 24 }}>
           {history.map((item) => (
             <View key={item.id} style={styles.historyItem}>

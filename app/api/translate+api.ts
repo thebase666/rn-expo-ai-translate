@@ -12,13 +12,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "Missing targetLang" }, { status: 400 });
     }
 
-    /**
-     * =====================
-     * 🖼️ 图片翻译（OCR + 翻译）
-     * =====================
-     */
     if (image) {
-      // ✅ 关键修复：去掉 data:image/...;base64,
       const cleanBase64Image = image.includes("base64,")
         ? image.split("base64,")[1]
         : image;
@@ -64,11 +58,6 @@ ${targetLang}
       return Response.json({ text: translatedText });
     }
 
-    /**
-     * =====================
-     * ✍️ 纯文本翻译
-     * =====================
-     */
     if (!text) {
       return Response.json({ error: "Missing text" }, { status: 400 });
     }
